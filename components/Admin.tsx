@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { AppData, Photo } from '../types';
 import { generateBirthdayWish } from '../services/geminiService';
 
@@ -20,6 +20,7 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
   const [message, setMessage] = useState(data.config.mainMessage);
   const [customBirthdayMessage, setCustomBirthdayMessage] = useState(data.config.customBirthdayMessage || '');
   const [newAdminPassword, setNewAdminPassword] = useState(data.config.adminPassword || 'vengat123');
+  const [googleClientId, setGoogleClientId] = useState(data.config.googleClientId || '');
   const [birthdayDate, setBirthdayDate] = useState(data.config.birthdayDate || '2025-12-09');
   const [showConfetti, setShowConfetti] = useState(data.config.showConfetti);
   const [themeColor, setThemeColor] = useState(data.config.themeColor || '#ec4899');
@@ -31,7 +32,25 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
 
   // Photo States
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+  const [photoToReplace, setPhotoToReplace] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [storageUsage, setStorageUsage] = useState<number>(0);
+
+  useEffect(() => {
+    calculateStorage();
+  }, [data]);
+
+  const calculateStorage = () => {
+    let total = 0;
+    for (let key in localStorage) {
+      if (localStorage.hasOwnProperty(key)) {
+        total += localStorage[key].length * 2;
+      }
+    }
+    // Convert to MB
+    setStorageUsage(total / 1024 / 1024);
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +71,7 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
         mainMessage: message,
         customBirthdayMessage: customBirthdayMessage,
         adminPassword: newAdminPassword,
+        googleClientId: googleClientId,
         showConfetti: showConfetti,
         birthdayDate: birthdayDate,
         themeColor: themeColor
@@ -65,6 +85,7 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
     const configMessage = data.config.mainMessage;
     const configCustomMsg = data.config.customBirthdayMessage || '';
     const configPwd = data.config.adminPassword || 'vengat123';
+    const configGoogleId = data.config.googleClientId || '';
     const configDate = data.config.birthdayDate || '2025-12-09';
     const configConfetti = data.config.showConfetti;
     const configTheme = data.config.themeColor || '#ec4899';
@@ -74,6 +95,7 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
       message !== configMessage ||
       customBirthdayMessage !== configCustomMsg ||
       newAdminPassword !== configPwd ||
+      googleClientId !== configGoogleId ||
       birthdayDate !== configDate ||
       showConfetti !== configConfetti ||
       themeColor !== configTheme
@@ -90,6 +112,18 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
       }
     } else {
       onExit();
+    }
+  };
+
+  const handleFactoryReset = () => {
+    const confirmReset = window.confirm(
+        "⚠️ FACTORY RESET WARNING ⚠️\n\n" +
+        "This will delete ALL local changes, including uploaded photos and text changes, and restore the original permanent build settings.\n\n" +
+        "This action cannot be undone. Are you sure?"
+    );
+    if (confirmReset) {
+        localStorage.clear();
+        window.location.reload();
     }
   };
 
@@ -110,8 +144,9 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
         img.src = event.target?.result as string;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1000;
-          const MAX_HEIGHT = 1000;
+          // Reduced dimensions for better storage efficiency
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
           let width = img.width;
           let height = img.height;
 
@@ -133,8 +168,8 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
           const ctx = canvas.getContext('2d');
           if (ctx) {
              ctx.drawImage(img, 0, 0, width, height);
-             // Compress to JPEG with 0.7 quality (significant size reduction)
-             resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+             // Compress to JPEG with 0.6 quality (balance between quality and size)
+             resolve(canvas.toDataURL('image/jpeg', 0.6)); 
           } else {
              reject(new Error("Canvas context failed"));
           }
@@ -148,6 +183,10 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (storageUsage > 4.5) {
+          alert("Storage Warning: You are approaching the browser's storage limit (5MB). Please delete some photos before adding more.");
+      }
+
       setIsUploading(true);
       try {
         const optimizedDataUrl = await optimizeImage(file);
@@ -171,8 +210,38 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
     }
   };
 
+  const handleReplaceClick = (id: string) => {
+    setPhotoToReplace(id);
+    if (replaceInputRef.current) {
+        replaceInputRef.current.click();
+    }
+  };
+
+  const handleReplaceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && photoToReplace) {
+        setIsUploading(true);
+        try {
+            const optimizedDataUrl = await optimizeImage(file);
+            onUpdate({
+                ...data,
+                photos: data.photos.map(p => 
+                    p.id === photoToReplace ? { ...p, url: optimizedDataUrl } : p
+                )
+            });
+        } catch (error) {
+            console.error("Image replacement failed:", error);
+            alert("Failed to replace image. Please try another one.");
+        } finally {
+            setIsUploading(false);
+            setPhotoToReplace(null);
+            if (replaceInputRef.current) replaceInputRef.current.value = '';
+        }
+    }
+  };
+
   const handleDeletePhoto = (id: string) => {
-    if(window.confirm("Are you sure you want to delete this photo?")) {
+    if(window.confirm("Are you sure you want to delete this photo? It will be removed from the gallery permanently.")) {
         onUpdate({
         ...data,
         photos: data.photos.filter(p => p.id !== id)
@@ -216,10 +285,15 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-gray-800">Site Admin</h1>
-        <button onClick={handleExit} className="text-sm px-4 py-2 border rounded-lg hover:bg-gray-50">
-          Exit to Site
+      <nav className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center sticky top-0 z-20">
+        <div className="flex items-center gap-2">
+           <div className="bg-party-100 p-2 rounded-lg text-party-600">
+             <i className="fas fa-tools"></i>
+           </div>
+           <h1 className="text-xl font-bold text-gray-800">Site Admin</h1>
+        </div>
+        <button onClick={handleExit} className="text-sm px-4 py-2 border rounded-lg hover:bg-gray-50 flex items-center gap-2">
+          <i className="fas fa-external-link-alt"></i> Exit to Site
         </button>
       </nav>
 
@@ -227,157 +301,232 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
         <div className="flex gap-4 mb-6">
           <button 
             onClick={() => setActiveTab('config')}
-            className={`px-6 py-2 rounded-full font-medium transition-colors ${activeTab === 'config' ? 'bg-party-600 text-white' : 'bg-white text-gray-600 border'}`}
+            className={`px-6 py-3 rounded-xl font-medium transition-all shadow-sm flex items-center gap-2 ${activeTab === 'config' ? 'bg-party-600 text-white shadow-party-200' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}
           >
-            Settings & AI
+            <i className="fas fa-sliders-h"></i> Settings & AI
           </button>
           <button 
             onClick={() => setActiveTab('photos')}
-            className={`px-6 py-2 rounded-full font-medium transition-colors ${activeTab === 'photos' ? 'bg-party-600 text-white' : 'bg-white text-gray-600 border'}`}
+            className={`px-6 py-3 rounded-xl font-medium transition-all shadow-sm flex items-center gap-2 ${activeTab === 'photos' ? 'bg-party-600 text-white shadow-party-200' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}
           >
-            Photo Gallery
+            <i className="fas fa-images"></i> Photo Gallery
           </button>
         </div>
 
         {activeTab === 'config' && (
-          <div className="bg-white rounded-2xl shadow-sm p-8 animate-fade-in max-w-3xl">
-            <div className="space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm p-8 animate-fade-in max-w-3xl border border-gray-100">
+            <div className="space-y-8">
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Birthday Person Name</label>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-party-500 outline-none"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Birthday Date (YYYY-MM-DD)</label>
-                    <input
-                      type="date"
-                      value={birthdayDate}
-                      onChange={(e) => setBirthdayDate(e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-party-500 outline-none"
-                    />
-                  </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Admin Password</label>
-                    <input
-                    type="text"
-                    value={newAdminPassword}
-                    onChange={(e) => setNewAdminPassword(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-party-500 outline-none font-mono"
-                    placeholder="Set new password"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Caution: Remember this password.</p>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Theme Color</label>
-                    <div className="flex items-center gap-3">
-                        <input
-                            type="color"
-                            value={themeColor}
-                            onChange={(e) => setThemeColor(e.target.value)}
-                            className="h-12 w-20 rounded cursor-pointer border-0 p-0"
-                            title="Choose site accent color"
-                        />
-                        <span className="text-sm text-gray-500 font-mono">{themeColor}</span>
+              {/* General Settings */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">General Info</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Birthday Person Name</label>
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-party-500 outline-none transition-all"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Birthday Date</label>
+                      <input
+                        type="date"
+                        value={birthdayDate}
+                        onChange={(e) => setBirthdayDate(e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-party-500 outline-none transition-all"
+                      />
                     </div>
                 </div>
               </div>
 
-               {/* Confetti Toggle */}
-               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Visual Effects</label>
-                <div 
-                  className="flex items-center gap-3 p-4 border rounded-lg bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => setShowConfetti(!showConfetti)}
-                >
-                  <div className={`relative w-12 h-6 rounded-full p-1 transition-colors duration-300 ${showConfetti ? 'bg-party-500' : 'bg-gray-300'}`}>
-                    <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${showConfetti ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">Show Butterflies</span>
-                </div>
-              </div>
-
-              {/* Special Birthday Message */}
+              {/* Authentication Settings */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Special Birthday Message</label>
-                <textarea
-                  value={customBirthdayMessage}
-                  onChange={(e) => setCustomBirthdayMessage(e.target.value)}
-                  rows={3}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-party-500 outline-none"
-                  placeholder="Enter a special featured message for the birthday person..."
-                />
+                <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                    <i className="fas fa-shield-alt text-party-500"></i> Authentication Settings
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-xl border border-gray-200">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Admin Password</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={newAdminPassword}
+                                onChange={(e) => setNewAdminPassword(e.target.value)}
+                                className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-party-500 outline-none font-mono transition-all"
+                                placeholder="Set new password"
+                            />
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                <i className="fas fa-key"></i>
+                            </div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Required for accessing this panel.</p>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Google Client ID (Optional)</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={googleClientId}
+                                onChange={(e) => setGoogleClientId(e.target.value)}
+                                className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-party-500 outline-none transition-all"
+                                placeholder="Enter OAuth Client ID"
+                            />
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                <i className="fab fa-google"></i>
+                            </div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Enables "Sign in with Google" button.</p>
+                    </div>
+                </div>
               </div>
 
+              {/* Visuals */}
               <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">Main Message (Tamil/English)</label>
-                  <span className="text-xs text-party-600 bg-party-50 px-2 py-1 rounded-full">Gemini AI Enabled</span>
+                <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Visuals & Theme</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Theme Color</label>
+                        <div className="flex items-center gap-3">
+                            <input
+                                type="color"
+                                value={themeColor}
+                                onChange={(e) => setThemeColor(e.target.value)}
+                                className="h-12 w-20 rounded cursor-pointer border-0 p-0 shadow-sm"
+                                title="Choose site accent color"
+                            />
+                            <span className="text-sm text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded">{themeColor}</span>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col justify-end">
+                        <div 
+                        className="flex items-center gap-3 p-3 border rounded-lg bg-white cursor-pointer hover:bg-gray-50 transition-colors select-none"
+                        onClick={() => setShowConfetti(!showConfetti)}
+                        >
+                        <div className={`relative w-12 h-6 rounded-full p-1 transition-colors duration-300 ${showConfetti ? 'bg-party-500' : 'bg-gray-300'}`}>
+                            <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${showConfetti ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Show Butterflies & Confetti</span>
+                        </div>
+                    </div>
                 </div>
-                <div className="flex gap-2 mb-2 flex-wrap">
-                   <select 
-                    value={aiTone} 
-                    onChange={(e) => setAiTone(e.target.value)}
-                    className="text-sm border rounded-md px-2 py-1"
-                   >
-                     <option value="Heartwarming">Heartwarming</option>
-                     <option value="Funny">Funny</option>
-                     <option value="Poetic">Poetic</option>
-                     <option value="Excited">Excited</option>
-                   </select>
-                   <select 
-                    value={aiLang} 
-                    onChange={(e) => setAiLang(e.target.value)}
-                    className="text-sm border rounded-md px-2 py-1"
-                   >
-                     <option value="English">English</option>
-                     <option value="Tamil">Tamil</option>
-                     <option value="Tanglish">Tanglish</option>
-                   </select>
-                   <button 
-                    onClick={handleGenerateWish}
-                    disabled={aiLoading}
-                    className="text-sm bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1 rounded-md flex items-center gap-2 hover:opacity-90 disabled:opacity-50"
-                   >
-                     {aiLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-magic"></i>}
-                     Auto-Write
-                   </button>
-                </div>
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={4}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-party-500 outline-none"
-                />
               </div>
 
-              <button 
-                onClick={handleSaveConfig}
-                className="w-full py-3 bg-party-600 text-white font-bold rounded-lg hover:bg-party-700 transition-colors shadow-lg"
-              >
-                Save Changes
-              </button>
+              {/* Messaging */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Messages</h3>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Special Birthday Feature Message</label>
+                        <textarea
+                        value={customBirthdayMessage}
+                        onChange={(e) => setCustomBirthdayMessage(e.target.value)}
+                        rows={2}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-party-500 outline-none transition-all"
+                        placeholder="Enter a special featured message..."
+                        />
+                    </div>
+
+                    <div>
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="block text-sm font-medium text-gray-700">Main Welcome Message</label>
+                            <span className="text-xs text-party-600 bg-party-50 px-2 py-1 rounded-full font-medium"><i className="fas fa-sparkles"></i> AI Enabled</span>
+                        </div>
+                        <div className="flex gap-2 mb-2 flex-wrap p-2 bg-gray-50 rounded-lg border border-gray-100">
+                        <select 
+                            value={aiTone} 
+                            onChange={(e) => setAiTone(e.target.value)}
+                            className="text-sm border rounded-md px-2 py-1 bg-white"
+                        >
+                            <option value="Heartwarming">Heartwarming</option>
+                            <option value="Funny">Funny</option>
+                            <option value="Poetic">Poetic</option>
+                            <option value="Excited">Excited</option>
+                        </select>
+                        <select 
+                            value={aiLang} 
+                            onChange={(e) => setAiLang(e.target.value)}
+                            className="text-sm border rounded-md px-2 py-1 bg-white"
+                        >
+                            <option value="English">English</option>
+                            <option value="Tamil">Tamil</option>
+                            <option value="Tanglish">Tanglish</option>
+                        </select>
+                        <button 
+                            onClick={handleGenerateWish}
+                            disabled={aiLoading}
+                            className="text-sm bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1 rounded-md flex items-center gap-2 hover:opacity-90 disabled:opacity-50 shadow-sm ml-auto"
+                        >
+                            {aiLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-magic"></i>}
+                            Generate with AI
+                        </button>
+                        </div>
+                        <textarea
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        rows={4}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-party-500 outline-none transition-all"
+                        />
+                    </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-gray-200 mt-6 flex flex-col gap-4">
+                  <button 
+                    onClick={handleSaveConfig}
+                    className="w-full py-4 bg-party-600 text-white font-bold rounded-xl hover:bg-party-700 transition-colors shadow-lg active:scale-[0.99]"
+                  >
+                    Save All Settings
+                  </button>
+
+                  <button 
+                    onClick={handleFactoryReset}
+                    className="w-full py-3 bg-red-50 text-red-600 font-medium rounded-xl hover:bg-red-100 transition-colors border border-red-200 text-sm flex items-center justify-center gap-2"
+                  >
+                    <i className="fas fa-trash-restore"></i>
+                    Reset to Permanent Build (Clear Local Data)
+                  </button>
+              </div>
             </div>
           </div>
         )}
 
         {activeTab === 'photos' && (
-          <div className="bg-white rounded-2xl shadow-sm p-8 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-sm p-8 animate-fade-in border border-gray-100">
+            
+            {/* Storage Indicator */}
+            <div className="mb-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Storage Usage</span>
+                    <span className={`text-xs font-bold ${storageUsage > 4 ? 'text-red-500' : 'text-gray-500'}`}>
+                        {storageUsage.toFixed(2)} MB / 5.00 MB
+                    </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div 
+                        className={`h-2.5 rounded-full transition-all duration-500 ${storageUsage > 4 ? 'bg-red-500' : 'bg-party-500'}`} 
+                        style={{ width: `${Math.min(100, (storageUsage / 5) * 100)}%` }}
+                    ></div>
+                </div>
+                <p className="text-[10px] text-gray-400 mt-2 flex items-start gap-1">
+                    <i className="fas fa-info-circle mt-[1px]"></i>
+                    <span>
+                      Photos are saved permanently in this browser's local storage. 
+                      To show these photos on a party display, please use <strong>this same device and browser</strong>.
+                    </span>
+                </p>
+            </div>
+
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-xl font-bold text-gray-800">Manage Gallery</h2>
+              <h2 className="text-xl font-bold text-gray-800">Manage Gallery ({data.photos.length})</h2>
               <button 
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="px-6 py-2 bg-green-500 text-white rounded-full hover:bg-green-600 flex items-center gap-2 shadow-sm transition-transform hover:scale-105 disabled:opacity-70 disabled:cursor-wait"
+                disabled={isUploading || storageUsage > 4.8}
+                className={`px-6 py-2 rounded-full flex items-center gap-2 shadow-sm transition-transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed ${storageUsage > 4.8 ? 'bg-gray-400 text-white' : 'bg-green-500 text-white hover:bg-green-600'}`}
               >
                 {isUploading ? (
                     <><i className="fas fa-spinner fa-spin"></i> Processing...</>
@@ -392,14 +541,28 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
                 accept="image/*"
                 onChange={handleFileUpload}
               />
+              <input 
+                type="file" 
+                ref={replaceInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleReplaceFile}
+              />
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {data.photos.map((photo) => (
-                <div key={photo.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col group hover:shadow-md transition-shadow">
-                  <div className="relative h-40 bg-gray-100">
-                    <img src={photo.url} alt="thumbnail" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div key={photo.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col group hover:shadow-md transition-shadow relative">
+                  <div className="relative h-40 bg-gray-100 group">
+                    <img src={photo.url} alt="thumbnail" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                      <button 
+                        onClick={() => handleReplaceClick(photo.id)}
+                        className="bg-blue-500 text-white w-10 h-10 rounded-full hover:bg-blue-600 flex items-center justify-center transition-transform hover:scale-110 shadow-lg"
+                        title="Change Photo"
+                      >
+                         <i className="fas fa-sync-alt"></i>
+                      </button>
                       <button 
                         onClick={() => handleDeletePhoto(photo.id)}
                         className="bg-red-500 text-white w-10 h-10 rounded-full hover:bg-red-600 flex items-center justify-center transition-transform hover:scale-110 shadow-lg"
@@ -409,22 +572,25 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
                       </button>
                     </div>
                   </div>
-                  <div className="p-3 bg-white flex-1">
+                  <div className="p-3 bg-white flex-1 flex flex-col">
                      <textarea
                         defaultValue={photo.caption}
                         onBlur={(e) => handleCaptionChange(photo.id, e.target.value)}
-                        placeholder="Write a dialogue or story..."
-                        className="w-full text-sm p-2 border border-gray-200 rounded-lg focus:border-party-400 focus:ring-2 focus:ring-party-100 outline-none transition-all placeholder-gray-400 resize-none h-20"
+                        placeholder="Write a caption..."
+                        className="w-full text-sm p-2 border border-gray-200 rounded-lg focus:border-party-400 focus:ring-2 focus:ring-party-100 outline-none transition-all placeholder-gray-400 resize-none h-20 mb-1"
                      />
+                     <div className="mt-auto text-[10px] text-gray-400 text-right">
+                         Auto-saved
+                     </div>
                   </div>
                 </div>
               ))}
               
               {data.photos.length === 0 && (
                 <div className="col-span-full py-16 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
-                  <div className="text-4xl mb-4 text-gray-300">📸</div>
+                  <div className="text-4xl mb-4 text-gray-300 animate-bounce">📸</div>
                   <p className="text-gray-500 font-medium">No memories added yet.</p>
-                  <p className="text-gray-400 text-sm mt-1">Click "Add New Memory" to get started.</p>
+                  <p className="text-gray-400 text-sm mt-1">Click "Add New Memory" above to get started.</p>
                 </div>
               )}
             </div>

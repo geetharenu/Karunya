@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { AppData } from '../types';
 import { generateBirthdayWish } from '../services/geminiService';
@@ -20,6 +21,9 @@ export const Lobby: React.FC<LobbyProps> = ({ data, onAdminClick }) => {
   const [magicWish, setMagicWish] = useState('');
   const [isWishing, setIsWishing] = useState(false);
 
+  // Notification State
+  const [showNotification, setShowNotification] = useState(false);
+
   // Tooltip State
   const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, text: '' });
 
@@ -32,6 +36,54 @@ export const Lobby: React.FC<LobbyProps> = ({ data, onAdminClick }) => {
 
   // Theme Handling
   const themeColor = data.config.themeColor || '#ec4899';
+
+  // --- Notification Logic ---
+  useEffect(() => {
+    // 1. Request Browser Notification Permission on mount
+    if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+    }
+
+    const checkTime = () => {
+        // Parse config date (YYYY-MM-DD)
+        const [year, month, day] = data.config.birthdayDate.split('-').map(Number);
+        
+        // Target: 12:00 AM (00:00:00) on the birthday
+        const birthdayTime = new Date(year, month - 1, day, 0, 0, 0);
+        const now = new Date();
+
+        // Check if current time is past the birthday time
+        if (now >= birthdayTime) {
+            const seen = sessionStorage.getItem('birthday_notification_seen');
+            if (!seen) {
+                // Show In-App Toast
+                setShowNotification(true);
+                sessionStorage.setItem('birthday_notification_seen', 'true');
+                
+                // Show Browser Notification
+                if ("Notification" in window && Notification.permission === "granted") {
+                    try {
+                        new Notification(`Happy Birthday ${data.config.birthdayPersonName}! 🎂`, {
+                            body: "It's 12:00 AM! Wishing you a magical day filled with joy!",
+                            icon: "https://cdn-icons-png.flaticon.com/512/2488/2488980.png"
+                        });
+                    } catch (e) {
+                        console.error("Notification failed", e);
+                    }
+                }
+            }
+        }
+    };
+
+    // Check immediately
+    checkTime();
+    
+    // Check every 10 seconds to catch the 12am transition relatively quickly
+    const interval = setInterval(checkTime, 10000);
+
+    return () => clearInterval(interval);
+  }, [data.config.birthdayDate, data.config.birthdayPersonName]);
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -80,6 +132,14 @@ export const Lobby: React.FC<LobbyProps> = ({ data, onAdminClick }) => {
     } else {
       setError('Incorrect password');
     }
+  };
+
+  const handleGoogleLogin = () => {
+      if (data.config.googleClientId) {
+          alert("Google Sign-In integration would initialize here with Client ID: " + data.config.googleClientId + ". (Demo Only)");
+      } else {
+          alert("Google Sign-In is not configured. Please use the password 'vengat123' (or your custom password) to login, then configure Google ID in settings.");
+      }
   };
 
   const handleMagicWish = async () => {
@@ -227,6 +287,36 @@ export const Lobby: React.FC<LobbyProps> = ({ data, onAdminClick }) => {
         </div>
       </header>
 
+      {/* Notification Toast */}
+      {showNotification && (
+        <div className="fixed top-24 right-4 md:right-8 z-50 animate-slide-up">
+            <div 
+                className="bg-white/10 backdrop-blur-xl border border-white/20 p-4 rounded-2xl shadow-2xl max-w-sm flex items-start gap-4 relative overflow-hidden"
+                style={{ borderColor: `${themeColor}40` }}
+            >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent"></div>
+                <div 
+                    className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-lg relative z-10 animate-bounce-slow"
+                    style={{ background: `linear-gradient(135deg, ${themeColor}, #fbbf24)` }}
+                >
+                    <span className="text-2xl filter drop-shadow">🎂</span>
+                </div>
+                <div className="relative z-10 flex-1">
+                    <h4 className="font-bold text-white text-lg leading-tight mb-1">It's 12:00 AM! 🕛</h4>
+                    <p className="text-white/80 text-sm">
+                        Happy Birthday {data.config.birthdayPersonName}! 🎉 The stars are shining just for you today!
+                    </p>
+                </div>
+                <button 
+                    onClick={() => setShowNotification(false)}
+                    className="text-white/50 hover:text-white relative z-10 transition-colors"
+                >
+                    <i className="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+      )}
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16 relative z-10">
         
         {/* Hero Message */}
@@ -280,14 +370,14 @@ export const Lobby: React.FC<LobbyProps> = ({ data, onAdminClick }) => {
                   }}
                 >
                   <div 
-                    className="overflow-hidden bg-gray-100 mb-4 aspect-auto rounded-md"
+                    className="overflow-hidden bg-gray-100 mb-4 aspect-auto rounded-md shadow-inner"
                     onMouseMove={(e) => handleImageMove(e, photo.caption)}
                     onMouseLeave={handleImageLeave}
                   >
                     <img 
                       src={photo.url} 
                       alt={photo.caption} 
-                      className="w-full h-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-110 contrast-[1.1] saturate-[1.1]"
+                      className="w-full h-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-110 contrast-125 brightness-110 saturate-[1.2]"
                       loading="lazy"
                     />
                   </div>
@@ -406,35 +496,57 @@ export const Lobby: React.FC<LobbyProps> = ({ data, onAdminClick }) => {
         <p>Made with ❤️ for {data.config.birthdayPersonName}</p>
       </footer>
 
-      {/* Admin Login Modal */}
+      {/* Admin Login Modal - Enhanced */}
       {showLoginModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm relative">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md relative overflow-hidden">
+             {/* Decorative Top Bar */}
+             <div className="absolute top-0 left-0 w-full h-2" style={{ background: `linear-gradient(90deg, ${themeColor}, #fbbf24)` }}></div>
+            
             <button 
               onClick={() => setShowLoginModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <i className="fas fa-times"></i>
+              <i className="fas fa-times text-xl"></i>
             </button>
             
-            <div className="text-center mb-6">
-              <div 
-                className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"
-                style={{ backgroundColor: `${themeColor}20`, color: themeColor }}
-              >
-                <i className="fas fa-lock"></i>
+            <div className="text-center mb-8 mt-2">
+              <div className="inline-block p-3 rounded-full bg-gray-50 mb-4 shadow-sm">
+                 <img src="https://cdn-icons-png.flaticon.com/512/9322/9322127.png" alt="Lock" className="w-12 h-12" />
               </div>
-              <h3 className="text-xl font-bold text-gray-800">Admin Access</h3>
-              <p className="text-sm text-gray-500">Enter password to continue</p>
+              <h3 className="text-2xl font-bold text-gray-800">Welcome Back</h3>
+              <p className="text-sm text-gray-500">Sign in to manage the celebration</p>
+            </div>
+
+            {/* Google Sign-In Button */}
+            <button
+                type="button"
+                onClick={handleGoogleLogin}
+                className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 font-medium py-2.5 rounded-lg hover:bg-gray-50 transition-all duration-200 mb-6 shadow-sm group"
+            >
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <span>Sign in with Google</span>
+            </button>
+
+            <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                    <span className="px-3 bg-white text-gray-500 font-medium">or with password</span>
+                </div>
             </div>
 
             <form onSubmit={handleLoginSubmit}>
-              <div className="mb-6">
+              <div className="mb-6 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <i className="fas fa-key"></i>
+                </div>
                 <input
                   type="password"
-                  placeholder="Password"
+                  placeholder="Enter Admin Password"
                   autoFocus
-                  className={`w-full p-3 border rounded-lg outline-none focus:ring-2 transition-all text-center tracking-widest text-gray-800 ${error ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg outline-none focus:ring-2 transition-all text-gray-800 ${error ? 'border-red-500 bg-red-50 focus:ring-red-200' : 'border-gray-300 focus:ring-party-200'}`}
                   style={{ '--tw-ring-color': themeColor } as React.CSSProperties}
                   value={password}
                   onChange={(e) => {
@@ -442,17 +554,22 @@ export const Lobby: React.FC<LobbyProps> = ({ data, onAdminClick }) => {
                     setError('');
                   }}
                 />
-                {error && <p className="text-red-500 text-xs mt-2 text-center">{error}</p>}
+                {error && <p className="text-red-500 text-xs mt-2 ml-1 flex items-center gap-1"><i className="fas fa-exclamation-circle"></i> {error}</p>}
               </div>
               
               <button 
                 type="submit" 
-                className="w-full text-white font-bold py-3 rounded-xl transition-all hover:scale-[1.02] shadow-lg active:scale-95"
+                className="w-full text-white font-bold py-3 rounded-xl transition-all hover:scale-[1.02] shadow-lg active:scale-95 flex justify-center items-center gap-2"
                 style={{ backgroundColor: themeColor }}
               >
-                Enter
+                <span>Continue</span>
+                <i className="fas fa-arrow-right"></i>
               </button>
             </form>
+            
+            <p className="text-center text-xs text-gray-400 mt-6">
+                Protected Area • Authorized Personnel Only
+            </p>
           </div>
         </div>
       )}

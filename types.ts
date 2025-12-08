@@ -14,6 +14,7 @@ export interface SiteConfig {
   themeColor: string;
   showConfetti: boolean;
   adminPassword?: string;
+  googleClientId?: string;
   birthdayDate: string;
 }
 
