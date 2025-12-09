@@ -98,10 +98,6 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, name }) =>
   const handleMove = (e: React.MouseEvent | React.TouchEvent, force = false) => {
     if (!isDrawing && !force) return;
     
-    // Prevent scrolling on touch devices while scratching
-    // Note: 'touch-action: none' in CSS usually handles this, but this is a backup
-    // e.preventDefault() is tricky with React synthetic events, rely on CSS
-    
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
@@ -163,7 +159,14 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, name }) =>
     
     const track = sliderTrackRef.current;
     const rect = track.getBoundingClientRect();
-    const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
+    
+    // Safely extract clientX from either MouseEvent or TouchEvent
+    let clientX = 0;
+    if ('touches' in e) {
+       clientX = e.touches[0].clientX;
+    } else {
+       clientX = (e as MouseEvent).clientX;
+    }
     
     const thumbWidth = 56;
     const maxVal = rect.width - thumbWidth;
@@ -199,7 +202,16 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, name }) =>
         sliderXRef.current = 0;
     }
   };
-
+  
+  // Cleanup listener on unmount if user leaves mid-drag
+  useEffect(() => {
+    return () => {
+        window.removeEventListener('mousemove', handleSliderDragMove);
+        window.removeEventListener('mouseup', handleSliderDragEnd);
+        window.removeEventListener('touchmove', handleSliderDragMove);
+        window.removeEventListener('touchend', handleSliderDragEnd);
+    }
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-party-100 overflow-hidden touch-none">
@@ -211,9 +223,6 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, name }) =>
             </h1>
             <p className="text-gray-500 mb-8 max-w-md">May your day be filled with laughter, joy, and lots of cake!</p>
             
-            {/* Slider shows up after scratching a bit, or is always there? Let's keep it mostly hidden until reveal to avoid confusion, or show it disabled. 
-                Let's reveal it as the user scratches for a cool effect.
-            */}
             <div 
               className={`transition-all duration-700 transform ${isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}
             >
@@ -250,7 +259,7 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, name }) =>
         <div 
             ref={containerRef} 
             className={`absolute inset-0 transition-opacity duration-1000 z-10 ${isRevealed && scratchProgress > 60 ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
-            style={{ touchAction: 'none' }} // Crucial for mobile
+            style={{ touchAction: 'none' }}
         >
             <canvas
                 ref={canvasRef}
@@ -264,7 +273,6 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({ onComplete, name }) =>
             />
         </div>
         
-        {/* Helper text - Only show when NOT revealed */}
         {!isRevealed && (
              <div className="absolute bottom-10 left-0 w-full text-center pointer-events-none z-20">
                  <p className="text-white bg-black/50 inline-block px-4 py-1 rounded-full text-sm animate-pulse shadow-lg">

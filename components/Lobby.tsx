@@ -50,7 +50,14 @@ export const Lobby: React.FC<LobbyProps> = ({ data, onAdminClick }) => {
 
     const checkTime = () => {
         // Parse config date (YYYY-MM-DD)
-        const [year, month, day] = data.config.birthdayDate.split('-').map(Number);
+        if (!data.config.birthdayDate) return;
+
+        const parts = data.config.birthdayDate.split('-');
+        if (parts.length !== 3) return;
+        
+        const year = parseInt(parts[0]);
+        const month = parseInt(parts[1]);
+        const day = parseInt(parts[2]);
         
         // Target: 12:00 AM (00:00:00) on the birthday
         const birthdayTime = new Date(year, month - 1, day, 0, 0, 0);
@@ -59,11 +66,20 @@ export const Lobby: React.FC<LobbyProps> = ({ data, onAdminClick }) => {
         // Check if current time is past the birthday time
         if (now >= birthdayTime) {
             try {
-                const seen = sessionStorage.getItem('birthday_notification_seen');
+                // Safely access sessionStorage
+                let seen = null;
+                try {
+                    seen = sessionStorage.getItem('birthday_notification_seen');
+                } catch (e) {
+                    console.warn("SessionStorage access blocked");
+                }
+
                 if (!seen) {
                     // Show In-App Toast
                     setShowNotification(true);
-                    sessionStorage.setItem('birthday_notification_seen', 'true');
+                    try {
+                        sessionStorage.setItem('birthday_notification_seen', 'true');
+                    } catch (e) { /* ignore */ }
                     
                     // Show Browser Notification
                     if ("Notification" in window && Notification.permission === "granted") {
@@ -78,10 +94,8 @@ export const Lobby: React.FC<LobbyProps> = ({ data, onAdminClick }) => {
                     }
                 }
             } catch (e) {
-                // Fallback if sessionStorage is blocked: just show notification once per component mount if time matches
-                // We rely on state 'showNotification' which defaults to false, so this logic needs careful handling
-                // For simplicity in restricted envs, we might skip the persistence check or just show it.
-                // Here we just suppress the error.
+                // Fallback safe mode
+                console.log("Notification check skipped due to error");
             }
         }
     };
@@ -100,28 +114,23 @@ export const Lobby: React.FC<LobbyProps> = ({ data, onAdminClick }) => {
     const handleScroll = () => {
       const y = window.scrollY;
       
-      // Parallax Effects
-      // Stars: Move background position for infinite looping
+      // Parallax Effects with safety checks
       if (starsRef.current) {
         starsRef.current.style.backgroundPositionY = `-${y * 0.1}px`;
       }
       
-      // Bokeh: Translate slightly to create depth (slower than foreground)
       if (bokehRef.current) {
         bokehRef.current.style.transform = `translateY(-${y * 0.15}px)`;
       }
 
-      // Constellation: Subtle movement
       if (constellationRef.current) {
         constellationRef.current.style.transform = `translateY(-${y * 0.05}px)`;
       }
       
-      // Galaxy: Very subtle vertical shift
       if (galaxyRef.current) {
           galaxyRef.current.style.transform = `translateY(-${y * 0.02}px)`;
       }
 
-      // Video: Subtle parallax
       if (videoRef.current) {
         videoRef.current.style.transform = `translateY(-${y * 0.03}px)`;
       }
