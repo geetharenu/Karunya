@@ -1,164 +1,120 @@
 
-import React, { useState, useEffect } from 'react';
-import { Entrance } from './components/Entrance';
-import { Lobby } from './components/Lobby';
-import { Admin } from './components/Admin';
-import { ScratchCard } from './components/ScratchCard';
-import { AppData, ViewState } from './types';
+import { useState } from "react";
 
-const STORAGE_KEY = 'birthday_app_data';
+interface Photo {
+  id: string;
+  url: string;
+}
 
-// --- PERMANENT DATA SECTION ---
-// To make your Admin changes visible to EVERYONE:
-// 1. Go to Admin Panel in the running app.
-// 2. Upload photos and change text.
-// 3. Click "Get Permanent Code" button in Admin > Settings.
-// 4. Copy that code and PASTE it over this entire DEFAULT_DATA constant below.
-const DEFAULT_DATA: AppData = {
+interface AppData {
   config: {
-    birthdayPersonName: "Karunya",
-    mainMessage:
-      "Welcome to my birthday celebration! I'm so happy you're here to share this special moment with me. Explore the gallery and enjoy the party!",
-    customBirthdayMessage:
-      "Happy Birthday! May your day be as wonderful as you are.",
-    adminPassword: "vengat123",
-    googleClientId: "",
-    showConfetti: true,
-    enableScratchCard: true,
-    birthdayDate: "2025-12-09",
-    themeColor: "#ec4899",
-  },
+    birthdayPersonName: string;
+    mainMessage: string;
+    customBirthdayMessage: string;
+    adminPassword: string;
+    googleClientId: string;
+    showConfetti: boolean;
+    enableScratchCard: boolean;
+    birthdayDate: string;
+    themeColor: string;
+  };
+  photos: Photo[];
+}
 
-  photos: [
+const DEFAULT_DATA: AppData = {
+  "config": {
+    "birthdayPersonName": "Karunya",
+    "mainMessage": "Welcome to my birthday celebration! I'm so happy you're here to share this special moment with me. Explore the gallery and enjoy the party!",
+    "customBirthdayMessage": "Happy Birthday! May your day be as wonderful as you are.",
+    "adminPassword": "vengat123",
+    "googleClientId": "",
+    "showConfetti": true,
+    "enableScratchCard": true,
+    "birthdayDate": "2025-12-09",
+    "themeColor": "#ec4899"
+  },
+  "photos": [
     {
-      id: "perm-1",
-      url: "data:image/jpeg;base64,PASTE_MAIN_IMAGE_HERE",
-      caption: "Karunya Birthday Photo 1"
-    },
-    {
-      id: "perm-2",
-      url: "data:image/jpeg;base64,PASTE_SECOND_IMAGE_HERE",
-      caption: "Karunya Birthday Photo 2"
-    },
-    {
-      id: "perm-3",
-      url: "data:image/jpeg;base64,PASTE_THIRD_IMAGE_HERE",
-      caption: "Karunya Birthday Photo 3"
+      "id": "perm-1",
+      "url":
+        "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD..."
     }
-    // மேலும் வேண்டுமானால் இதே format-ல் சேர்க்கலாம்
   ]
 };
 
-const App: React.FC = () => {
-  const [view, setView] = useState<ViewState>('ENTRANCE');
-  const [data, setData] = useState<AppData>(DEFAULT_DATA);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isAdminAuth, setIsAdminAuth] = useState(false);
+export default function App() {
+  const data = DEFAULT_DATA;
+  const [entered, setEntered] = useState(false);
 
-  // Load data from LocalStorage on mount
-  useEffect(() => {
-    let savedData = null;
-    try {
-      savedData = localStorage.getItem(STORAGE_KEY);
-    } catch (e) {
-      console.warn("LocalStorage access blocked:", e);
-    }
+  if (!entered) {
+    return (
+      <div
+        style={{
+          height: "100vh",
+          background: data.config.themeColor,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          color: "white",
+          textAlign: "center",
+        }}
+      >
+        <h1 style={{ fontSize: "40px", fontWeight: "bold" }}>
+          🎉 Happy Birthday
+        </h1>
+        <h2 style={{ fontSize: "32px", marginTop: "10px" }}>
+          {data.config.birthdayPersonName}
+        </h2>
 
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        
-        // Robust Merge
-        const mergedData: AppData = {
-            ...DEFAULT_DATA, 
-            ...parsed,       
-            config: {
-                ...DEFAULT_DATA.config,
-                ...(parsed.config || {})
-            },
-            photos: Array.isArray(parsed.photos) ? parsed.photos : DEFAULT_DATA.photos
-        };
-
-        // Legacy fixes
-        if (mergedData.config.birthdayPersonName === "Vishwa") mergedData.config.birthdayPersonName = "Karunya";
-        if (mergedData.config.themeColor === "pink") mergedData.config.themeColor = "#ec4899";
-
-        setData(mergedData);
-      } catch (e) {
-        console.error("Failed to parse saved data", e);
-      }
-    }
-    setIsLoaded(true);
-  }, []);
-
-  // Save data to LocalStorage whenever it changes
-  useEffect(() => {
-    if (isLoaded) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      } catch (e) {
-        if (e instanceof DOMException && e.name === 'QuotaExceededError') {
-          console.error('LocalStorage quota exceeded');
-        } else {
-          console.warn('Failed to save data to localStorage', e);
-        }
-      }
-    }
-  }, [data, isLoaded]);
-
-  const handleUpdateData = (newData: AppData) => {
-    setData(newData);
-  };
-
-  const handleEntranceComplete = () => {
-    if (data.config.enableScratchCard !== false) {
-      setView('SCRATCH');
-    } else {
-      setView('LOBBY');
-    }
-  };
-
-  if (!isLoaded) return null;
+        <button
+          onClick={() => setEntered(true)}
+          style={{
+            marginTop: "30px",
+            padding: "15px 30px",
+            background: "white",
+            color: "#000",
+            borderRadius: "10px",
+            fontSize: "20px",
+            fontWeight: "bold",
+          }}
+        >
+          Tap to Enter 🚪
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen">
-      {view === 'ENTRANCE' && (
-        <Entrance 
-          name={data.config.birthdayPersonName} 
-          onEnter={handleEntranceComplete} 
-        />
-      )}
-      
-      {view === 'SCRATCH' && (
-        <ScratchCard 
-          name={data.config.birthdayPersonName} 
-          onComplete={() => setView('LOBBY')} 
-        />
-      )}
-      
-      {view === 'LOBBY' && (
-        <Lobby 
-          data={data} 
-          onAdminClick={() => {
-            setIsAdminAuth(true);
-            setView('ADMIN');
-          }} 
-        />
-      )}
+    <div style={{ padding: "20px" }}>
+      <h1 style={{ color: data.config.themeColor }}>
+        {data.config.customBirthdayMessage}
+      </h1>
+      <p style={{ marginTop: "10px" }}>{data.config.mainMessage}</p>
 
-      {view === 'ADMIN' && (
-        <Admin 
-          data={data} 
-          preAuthenticated={isAdminAuth}
-          onUpdate={handleUpdateData} 
-          onExit={() => {
-            setIsAdminAuth(false);
-            setView('LOBBY');
-          }} 
-        />
-      )}
+      <h2 style={{ marginTop: "20px" }}>Photo Gallery</h2>
+
+      <div
+        style={{
+          marginTop: "15px",
+          display: "grid",
+          gridTemplateColumns: "1fr",
+          gap: "20px",
+        }}
+      >
+        {data.photos.map((p) => (
+          <img
+            key={p.id}
+            src={p.url}
+            alt="Birthday"
+            style={{
+              width: "100%",
+              borderRadius: "15px",
+              boxShadow: "0 0 10px #0003",
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
-};
-
-export default App;
+}
