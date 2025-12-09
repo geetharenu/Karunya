@@ -17,55 +17,35 @@ const STORAGE_KEY = 'birthday_app_data';
 const DEFAULT_DATA: AppData = {
   config: {
     birthdayPersonName: "Karunya",
-    mainMessage: "Welcome to my birthday celebration! I'm so happy you're here to share this special moment with me. Explore the gallery and enjoy the party!",
-    customBirthdayMessage: "Happy Birthday! May your day be as wonderful as you are.",
-    themeColor: "#ec4899",
+    mainMessage:
+      "Welcome to my birthday celebration! I'm so happy you're here to share this special moment with me. Explore the gallery and enjoy the party!",
+    customBirthdayMessage:
+      "Happy Birthday! May your day be as wonderful as you are.",
+    adminPassword: "vengat123",
+    googleClientId: "",
     showConfetti: true,
     enableScratchCard: true,
-    adminPassword: "vengat123",
-    birthdayDate: "2025-12-09"
+    birthdayDate: "2025-12-09",
+    themeColor: "#ec4899",
   },
+
   photos: [
     {
-      id: 'perm-1',
-      url: 'https://placehold.co/600x800/0ea5e9/white?text=Blue+Saree+Photo', 
-      caption: "Draped in blue, elegance so true 💙\nA timeless grace that shines through 🌟\nHappy Birthday, beautiful you! 👑✨"
+      id: "perm-1",
+      url: "data:image/jpeg;base64,PASTE_MAIN_IMAGE_HERE",
+      caption: "Karunya Birthday Photo 1"
     },
     {
-      id: 'perm-2',
-      url: 'https://placehold.co/600x800/881337/white?text=Maroon+Back+View',
-      caption: "A stunning view, a style so grand 🌹\nThe loveliest soul in all the land 🌍\nForever holding your hand! 🤝❤️"
+      id: "perm-2",
+      url: "data:image/jpeg;base64,PASTE_SECOND_IMAGE_HERE",
+      caption: "Karunya Birthday Photo 2"
     },
     {
-      id: 'perm-3',
-      url: 'https://placehold.co/600x800/65a30d/white?text=Green+Nature+Photo',
-      caption: "Nature's beauty matches your glow 🌿\nA heart of gold that loves to grow 🌻\nWishing you joy that overflows! 🌊💖"
-    },
-    {
-      id: 'perm-4',
-      url: 'https://placehold.co/600x800/9f1239/white?text=Maroon+Side+Pose',
-      caption: "In shades of red, you steal the scene 💃\nMy mesmerizing, gorgeous queen 👸\nLiving the sweetest dream! 🍬💤"
-    },
-    {
-      id: 'perm-5',
-      url: 'https://placehold.co/600x800/2dd4bf/white?text=Seated+Saree+Photo',
-      caption: "Quiet moments, a gentle gaze 👀\nYou brighten up my darkest days ☀️\nLoving you in a million ways! 💯💞"
-    },
-    {
-      id: 'perm-6',
-      url: 'https://placehold.co/600x800/84cc16/white?text=Lime+Green+Photo',
-      caption: "Vibrant spirit, smile so bright 😁\nYou are my sparkle, my guiding light 💡\nHave a birthday purely delight! 🎉🌈"
-    },
-    {
-      id: 'perm-7',
-      url: 'https://placehold.co/600x800/db2777/white?text=Pink+Selfie+Close+Up',
-      caption: "Eyes that speak, a smile so sweet 🍭\nYou make my life complete ✅\nMy heart skips a beat! 💓💓"
-    },
-    {
-      id: 'perm-8',
-      url: 'https://placehold.co/600x800/f59e0b/white?text=Close+Up+Smile',
-      caption: "Golden glow on a special day ✨\nSending love your way 💌\nHip Hip Hooray! 🥳🎂"
+      id: "perm-3",
+      url: "data:image/jpeg;base64,PASTE_THIRD_IMAGE_HERE",
+      caption: "Karunya Birthday Photo 3"
     }
+    // மேலும் வேண்டுமானால் இதே format-ல் சேர்க்கலாம்
   ]
 };
 
