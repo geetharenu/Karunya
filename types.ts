@@ -10,9 +10,10 @@ export interface Photo {
 export interface SiteConfig {
   birthdayPersonName: string;
   mainMessage: string;
-  customBirthdayMessage?: string; // New field
+  customBirthdayMessage?: string;
   themeColor: string;
   showConfetti: boolean;
+  enableScratchCard?: boolean; // New field to control flow
   adminPassword?: string;
   googleClientId?: string;
   birthdayDate: string;

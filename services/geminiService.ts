@@ -1,29 +1,21 @@
 import { GoogleGenAI } from "@google/genai";
 
-const getClient = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    console.error("API Key is missing!");
-    return null;
-  }
-  return new GoogleGenAI({ apiKey });
-};
+// Initialize the client with the API key from the environment variable.
+// We assume the variable is pre-configured and valid.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generateBirthdayWish = async (
   name: string,
   tone: string,
   language: string
 ): Promise<string> => {
-  const client = getClient();
-  if (!client) return "Happy Birthday! (API Key missing)";
-
   try {
     const prompt = `Write a short, heartwarming birthday wish for someone named "${name}". 
     Tone: ${tone}. 
     Language: ${language}. 
     Keep it under 50 words. Do not include quotes around the text.`;
 
-    const response = await client.models.generateContent({
+    const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
     });

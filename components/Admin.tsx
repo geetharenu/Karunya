@@ -23,8 +23,13 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
   const [googleClientId, setGoogleClientId] = useState(data.config.googleClientId || '');
   const [birthdayDate, setBirthdayDate] = useState(data.config.birthdayDate || '2025-12-09');
   const [showConfetti, setShowConfetti] = useState(data.config.showConfetti);
+  const [enableScratchCard, setEnableScratchCard] = useState(data.config.enableScratchCard !== false);
   const [themeColor, setThemeColor] = useState(data.config.themeColor || '#ec4899');
   
+  // Export Modal State
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportCode, setExportCode] = useState('');
+
   // Gemini States
   const [aiLoading, setAiLoading] = useState(false);
   const [aiTone, setAiTone] = useState('Funny');
@@ -81,11 +86,41 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
         adminPassword: newAdminPassword,
         googleClientId: googleClientId,
         showConfetti: showConfetti,
+        enableScratchCard: enableScratchCard,
         birthdayDate: birthdayDate,
         themeColor: themeColor
       }
     });
     alert('Settings Saved!');
+  };
+
+  const handleGenerateCode = () => {
+      // Create current state object
+      const currentData: AppData = {
+          config: {
+              birthdayPersonName: name,
+              mainMessage: message,
+              customBirthdayMessage: customBirthdayMessage,
+              adminPassword: newAdminPassword,
+              googleClientId: googleClientId,
+              showConfetti: showConfetti,
+              enableScratchCard: enableScratchCard,
+              birthdayDate: birthdayDate,
+              themeColor: themeColor
+          },
+          photos: data.photos
+      };
+
+      const json = JSON.stringify(currentData, null, 2);
+      const code = `const DEFAULT_DATA: AppData = ${json};`;
+      setExportCode(code);
+      setShowExportModal(true);
+  };
+
+  const copyToClipboard = () => {
+      navigator.clipboard.writeText(exportCode).then(() => {
+          alert("Code copied to clipboard! Now paste it into App.tsx replacing the DEFAULT_DATA variable.");
+      });
   };
 
   const hasUnsavedChanges = () => {
@@ -96,6 +131,7 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
     const configGoogleId = data.config.googleClientId || '';
     const configDate = data.config.birthdayDate || '2025-12-09';
     const configConfetti = data.config.showConfetti;
+    const configScratch = data.config.enableScratchCard !== false;
     const configTheme = data.config.themeColor || '#ec4899';
 
     return (
@@ -106,6 +142,7 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
       googleClientId !== configGoogleId ||
       birthdayDate !== configDate ||
       showConfetti !== configConfetti ||
+      enableScratchCard !== configScratch ||
       themeColor !== configTheme
     );
   };
@@ -126,8 +163,8 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
   const handleFactoryReset = () => {
     const confirmReset = window.confirm(
         "⚠️ FACTORY RESET WARNING ⚠️\n\n" +
-        "This will delete ALL local changes, including uploaded photos and text changes, and restore the original permanent build settings.\n\n" +
-        "This action cannot be undone. Are you sure?"
+        "This will delete ALL local changes and restore the permanent build code settings.\n\n" +
+        "Are you sure?"
     );
     if (confirmReset) {
         try {
@@ -156,9 +193,8 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
         img.src = event.target?.result as string;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          // Reduced dimensions for better storage efficiency
-          const MAX_WIDTH = 800;
-          const MAX_HEIGHT = 800;
+          const MAX_WIDTH = 600;
+          const MAX_HEIGHT = 600;
           let width = img.width;
           let height = img.height;
 
@@ -180,8 +216,8 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
           const ctx = canvas.getContext('2d');
           if (ctx) {
              ctx.drawImage(img, 0, 0, width, height);
-             // Compress to JPEG with 0.6 quality (balance between quality and size)
-             resolve(canvas.toDataURL('image/jpeg', 0.6)); 
+             // Compress to JPEG with 0.5 quality to significantly reduce size
+             resolve(canvas.toDataURL('image/jpeg', 0.5)); 
           } else {
              reject(new Error("Canvas context failed"));
           }
@@ -213,7 +249,7 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
         });
       } catch (error) {
         console.error("Image optimization failed:", error);
-        alert("Failed to process image. Please try another one.");
+        alert("Failed to process image. It might be too large or corrupted.");
       } finally {
         setIsUploading(false);
         // Reset input
@@ -262,7 +298,6 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
   };
 
   const handleCaptionChange = (id: string, newCaption: string) => {
-    // Only update if changed to avoid unnecessary re-renders/writes
     const currentPhoto = data.photos.find(p => p.id === id);
     if (currentPhoto && currentPhoto.caption === newCaption) return;
 
@@ -414,15 +449,25 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
                         </div>
                     </div>
 
-                    <div className="flex flex-col justify-end">
+                    <div className="flex flex-col justify-end gap-2">
                         <div 
-                        className="flex items-center gap-3 p-3 border rounded-lg bg-white cursor-pointer hover:bg-gray-50 transition-colors select-none"
-                        onClick={() => setShowConfetti(!showConfetti)}
+                          className="flex items-center gap-3 p-3 border rounded-lg bg-white cursor-pointer hover:bg-gray-50 transition-colors select-none"
+                          onClick={() => setShowConfetti(!showConfetti)}
                         >
-                        <div className={`relative w-12 h-6 rounded-full p-1 transition-colors duration-300 ${showConfetti ? 'bg-party-500' : 'bg-gray-300'}`}>
-                            <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${showConfetti ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                          <div className={`relative w-12 h-6 rounded-full p-1 transition-colors duration-300 ${showConfetti ? 'bg-party-500' : 'bg-gray-300'}`}>
+                              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${showConfetti ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                          </div>
+                          <span className="text-sm font-medium text-gray-700">Show Butterflies & Confetti</span>
                         </div>
-                        <span className="text-sm font-medium text-gray-700">Show Butterflies & Confetti</span>
+
+                        <div 
+                          className="flex items-center gap-3 p-3 border rounded-lg bg-white cursor-pointer hover:bg-gray-50 transition-colors select-none"
+                          onClick={() => setEnableScratchCard(!enableScratchCard)}
+                        >
+                          <div className={`relative w-12 h-6 rounded-full p-1 transition-colors duration-300 ${enableScratchCard ? 'bg-party-500' : 'bg-gray-300'}`}>
+                              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${enableScratchCard ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                          </div>
+                          <span className="text-sm font-medium text-gray-700">Show Scratch Card Page</span>
                         </div>
                     </div>
                 </div>
@@ -492,7 +537,16 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
                     onClick={handleSaveConfig}
                     className="w-full py-4 bg-party-600 text-white font-bold rounded-xl hover:bg-party-700 transition-colors shadow-lg active:scale-[0.99]"
                   >
-                    Save All Settings
+                    Save All Settings (Local Only)
+                  </button>
+                  
+                  {/* Export Button */}
+                  <button 
+                    onClick={handleGenerateCode}
+                    className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg active:scale-[0.99] flex justify-center items-center gap-2"
+                  >
+                    <i className="fas fa-code"></i>
+                    Get Permanent Code (Publish)
                   </button>
 
                   <button 
@@ -505,6 +559,42 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
               </div>
             </div>
           </div>
+        )}
+
+        {/* Modal for Exporting Code */}
+        {showExportModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl h-[80vh] flex flex-col">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold text-gray-800">Permanent Code Export</h3>
+                        <button onClick={() => setShowExportModal(false)} className="text-gray-500 hover:text-gray-700">
+                            <i className="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-sm text-yellow-800 mb-4">
+                        <strong>Instructions:</strong> To make your photos and changes permanent for all users:
+                        <ol className="list-decimal ml-5 mt-1 space-y-1">
+                            <li>Click the "Copy Code" button below.</li>
+                            <li>Open <code>App.tsx</code> in your code editor.</li>
+                            <li>Replace the entire <code>DEFAULT_DATA</code> constant with this code.</li>
+                            <li>Deploy your app!</li>
+                        </ol>
+                    </div>
+                    <div className="flex-1 overflow-auto bg-gray-900 rounded-lg p-4 border border-gray-700">
+                        <code className="text-xs font-mono text-green-400 break-all whitespace-pre-wrap select-all block">
+                            {exportCode}
+                        </code>
+                    </div>
+                    <div className="mt-4 pt-2 border-t flex justify-end">
+                        <button 
+                            onClick={copyToClipboard}
+                            className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700 transition-colors flex items-center gap-2 shadow-lg"
+                        >
+                            <i className="fas fa-copy"></i> Copy Code
+                        </button>
+                    </div>
+                </div>
+            </div>
         )}
 
         {activeTab === 'photos' && (
@@ -528,7 +618,7 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
                     <i className="fas fa-info-circle mt-[1px]"></i>
                     <span>
                       Photos are saved permanently in this browser's local storage. 
-                      To show these photos on a party display, please use <strong>this same device and browser</strong>.
+                      To make them visible to everyone, go to <strong>Settings</strong> and click <strong>Get Permanent Code</strong>.
                     </span>
                 </p>
             </div>
