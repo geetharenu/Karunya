@@ -53,7 +53,13 @@ const App: React.FC = () => {
 
   // Load data from LocalStorage on mount
   useEffect(() => {
-    const savedData = localStorage.getItem(STORAGE_KEY);
+    let savedData = null;
+    try {
+      savedData = localStorage.getItem(STORAGE_KEY);
+    } catch (e) {
+      console.warn("LocalStorage access blocked:", e);
+    }
+
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
@@ -96,10 +102,9 @@ const App: React.FC = () => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       } catch (e) {
         if (e instanceof DOMException && e.name === 'QuotaExceededError') {
-          // Alert handled in Admin component mostly, but good to catch here silently or log
           console.error('LocalStorage quota exceeded');
         } else {
-          console.error('Failed to save data', e);
+          console.warn('Failed to save data to localStorage', e);
         }
       }
     }

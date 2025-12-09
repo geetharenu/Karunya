@@ -42,14 +42,22 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
   }, [data]);
 
   const calculateStorage = () => {
-    let total = 0;
-    for (let key in localStorage) {
-      if (localStorage.hasOwnProperty(key)) {
-        total += localStorage[key].length * 2;
-      }
+    try {
+        let total = 0;
+        // Check if localStorage is available before iterating
+        if (typeof localStorage !== 'undefined') {
+            for (let key in localStorage) {
+              if (localStorage.hasOwnProperty(key)) {
+                total += localStorage[key].length * 2;
+              }
+            }
+        }
+        // Convert to MB
+        setStorageUsage(total / 1024 / 1024);
+    } catch(e) {
+        console.warn("Storage calculation failed", e);
+        setStorageUsage(0);
     }
-    // Convert to MB
-    setStorageUsage(total / 1024 / 1024);
   };
 
   const handleLogin = (e: React.FormEvent) => {
@@ -122,7 +130,11 @@ export const Admin: React.FC<AdminProps> = ({ data, onUpdate, onExit, preAuthent
         "This action cannot be undone. Are you sure?"
     );
     if (confirmReset) {
-        localStorage.clear();
+        try {
+            localStorage.clear();
+        } catch(e) {
+            console.warn("Could not clear localStorage", e);
+        }
         window.location.reload();
     }
   };
