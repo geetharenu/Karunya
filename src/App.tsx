@@ -1,144 +1,47 @@
-
-import { useState } from "react";
+import React, { useState } from "react";
 import Hero from "./components/Hero";
 import Gallery from "./components/Gallery";
 
-interface Photo {
-  id: string;
-  url: string;
-}
-
-interface AppData {
-  config: {
-    birthdayPersonName: string;
-    mainMessage: string;
-    customBirthdayMessage: string;
-    adminPassword: string;
-    googleClientId: string;
-    showConfetti: boolean;
-    enableScratchCard: boolean;
-    birthdayDate: string;
-    themeColor: string;
-  };
-  photos: Photo[];
-}
-
-const DEFAULT_DATA: AppData = {
-  "config": {
-    "birthdayPersonName": "Karunya",
-    "mainMessage": "Welcome to my birthday celebration! I'm so happy you're here to share this special moment with me. Explore the gallery and enjoy the party!",
-    "customBirthdayMessage": "Happy Birthday! May your day be as wonderful as you are.",
-    "adminPassword": "vengat123",
-    "googleClientId": "",
-    "showConfetti": true,
-    "enableScratchCard": true,
-    "birthdayDate": "2025-12-09",
-    "themeColor": "#ec4899"
-  },
-  photos: [
-  {
-    id: "1",
-    url: "/photos/Picsart_25-11-15_09-38-05-606.jpg"
-  },
-  {
-    id: "2",
-    url: "/photos/Picsart_25-11-15_09-39-12-019.jpg"
-  },
-  {
-    id: "3",
-    url: "/photos/Picsart_25-11-15_09-39-45-846.jpg"
-  },
-  {
-    id: "4",
-    url: "/photos/Picsart_25-11-15_09-40-24-586.jpg"
-  },
-  {
-    id: "5",
-    url: "/photos/Picsart_25-11-15_09-41-50-080.jpg"
-  },
-  {
-    id: "6",
-    url: "/photos/Picsart_25-11-15_09-42-16-449.jpg"
-  },
-  {
-    id: "7",
-    url: "/photos/Picsart_25-11-15_09-43-00-858.jpg"
-  },
-  {
-    id: "8",
-    url: "/photos/Picsart_25-12-08_19-39-38-891.jpg"
-  }
-]
-};
-
-export default function App() {
-  const data = DEFAULT_DATA;
+const App: React.FC = () => {
   const [entered, setEntered] = useState(false);
 
-  if (!entered) {
-    return (
-      <div
-        style={{
-          height: "100vh",
-          background: data.config.themeColor,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          color: "white",
-          textAlign: "center",
-        }}
-      >
-        <h1 style={{ fontSize: "40px", fontWeight: "bold" }}>
-          🎉 Happy Birthday
-        </h1>
-        <h2 style={{ fontSize: "32px", marginTop: "10px" }}>
-          {data.config.birthdayPersonName}
-        </h2>
+  const photos = [
+    { id: "1", url: "/photos/Picsart_25-11-15_09-38-05-606.jpg" },
+    { id: "2", url: "/photos/Picsart_25-11-15_09-39-12-019.jpg" },
+    { id: "3", url: "/photos/Picsart_25-11-15_09-39-45-846.jpg" },
+    { id: "4", url: "/photos/Picsart_25-11-15_09-40-24-586.jpg" },
+    { id: "5", url: "/photos/Picsart_25-11-15_09-41-50-080.jpg" },
+    { id: "6", url: "/photos/Picsart_25-11-15_09-42-16-449.jpg" },
+    { id: "7", url: "/photos/Picsart_25-11-15_09-43-00-858.jpg" },
+    { id: "8", url: "/photos/Picsart_25-12-08_19-39-38-891.jpg" }
+  ];
 
-        <button
-          onClick={() => setEntered(true)}
-          style={{
-            marginTop: "30px",
-            padding: "15px 30px",
-            background: "white",
-            color: "#000",
-            borderRadius: "10px",
-            fontSize: "20px",
-            fontWeight: "bold",
-          }}
-        >
-          Tap to Enter 🚪
-        </button>
-      </div>
-    );
-  }
-  
-}
+  return (
+    <div style={{ width: "100%", minHeight: "100vh", overflowX: "hidden" }}>
+      
+      {/* First Screen - Hero Section */}
+      {!entered && (
+        <div onClick={() => setEntered(true)} style={{ cursor: "pointer" }}>
+          <Hero />
+        </div>
+      )}
 
-return (
-  <>
-    {/* Hero Section */}
-    <Hero />
+      {/* Second Screen - Gallery Section */}
+      {entered && (
+        <div style={{ animation: "fadeIn 1.2s ease-out" }}>
+          <Gallery photos={photos} />
+        </div>
+      )}
 
-    {/* Main Content */}
-    <div style={{ padding: "20px" }}>
-
-      {/* Main Birthday Message */}
-      <h1 style={{ color: data.config.themeColor, marginTop: "20px" }}>
-        {data.config.customBirthdayMessage}
-      </h1>
-
-      <p style={{ marginTop: "10px" }}>
-        {data.config.mainMessage}
-      </p>
-
-      <h2 style={{ marginTop: "25px", fontSize: "28px", fontWeight: "bold" }}>
-        📸 Photo Gallery
-      </h2>
-
-      {/* Gallery Section */}
-      <Gallery photos={data.photos} />
+      {/* Page-level animations */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
-  </>
-);
+  );
+};
+
+export default App;
