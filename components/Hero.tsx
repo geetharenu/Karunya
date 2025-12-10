@@ -1,56 +1,28 @@
 import React from "react";
+import "./Hero.css";
 
-const Hero: React.FC = () => {
+const Hero = () => {
   return (
-    <div
-      style={{
-        height: "100vh",
-        width: "100%",
-        background: "linear-gradient(135deg, #ff9a9e, #fad0c4)",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        textAlign: "center",
-        animation: "fadeIn 1.4s ease-out",
-      }}
-    >
-      <h1
-        style={{
-          fontSize: "48px",
-          fontWeight: "bold",
-          color: "white",
-          letterSpacing: "2px",
-          animation: "scaleIn 1.3s ease-out",
-        }}
-      >
-        🎉 Happy Birthday 🎉
-      </h1>
+    <section className="hero-section">
 
-      <p
-        style={{
-          marginTop: "10px",
-          fontSize: "28px",
-          color: "#fff",
-          fontWeight: "600",
-          animation: "fadeIn 2s ease-in",
-        }}
-      >
-        Tap to Enter ✨
-      </p>
+      {/* Background Music */}
+      <audio autoPlay loop src="/music/birthday.mp3" />
 
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
+      {/* Gold Particle Animation */}
+      <div className="gold-particles"></div>
 
-        @keyframes scaleIn {
-          from { transform: scale(0.8); opacity: 0; }
-          to { transform: scale(1); opacity: 1; }
-        }
-      `}</style>
-    </div>
+      {/* Main Content */}
+      <div className="hero-content">
+        <h1 className="hero-title">Happy Birthday Karunya 🎉✨</h1>
+        <p className="hero-sub">You Make Every Moment Magical 💖</p>
+
+        <img
+          src="/photos/hero.jpg"
+          alt="Karunya"
+          className="hero-photo"
+        />
+      </div>
+    </section>
   );
 };
 
