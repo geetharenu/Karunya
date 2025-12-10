@@ -1,26 +1,52 @@
 import React from "react";
 
-const Hero = () => {
+export default function Hero() {
   return (
     <div
       style={{
-        padding: "60px 20px",
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
         textAlign: "center",
-        background: "linear-gradient(135deg, #ff9ecd, #ffb8e0)",
-        borderRadius: "18px",
-        color: "#fff",
-        fontSize: "32px",
-        fontWeight: "bold",
-        boxShadow: "0 8px 25px rgba(0,0,0,0.2)",
-        animation: "fadeIn 1.2s ease-out"
+        background: "linear-gradient(135deg, #ff8ec7, #8ec5ff)",
+        padding: "20px",
+        animation: "fadeIn 1.2s ease-out",
       }}
     >
-      🎉 Happy Birthday Karunya 🎉 <br />
-      <span style={{ fontSize: "22px", fontWeight: "normal" }}>
-        You make the world beautiful ✨
-      </span>
+      <div
+        style={{
+          backdropFilter: "blur(15px)",
+          background: "rgba(255,255,255,0.2)",
+          padding: "30px 40px",
+          borderRadius: "20px",
+          border: "2px solid rgba(255,255,255,0.5)",
+          boxShadow: "0 0 25px rgba(255,255,255,0.6)",
+          animation: "scaleIn 1.2s ease-out",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: "45px",
+            fontWeight: "bold",
+            color: "white",
+            textShadow: "0 0 10px #fff",
+          }}
+        >
+          🎉 Happy Birthday 🎉
+        </h1>
+
+        <p
+          style={{
+            marginTop: "10px",
+            fontSize: "28px",
+            color: "#fff",
+            fontWeight: "600",
+          }}
+        >
+          Tap to Enter ✨
+        </p>
+      </div>
     </div>
   );
-};
-
-export default Hero;
+}
