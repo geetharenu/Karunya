@@ -1,29 +1,32 @@
 import React from "react";
 import "./Hero.css";
 
-const Hero = () => {
+export default function Hero() {
   return (
-    <section className="hero-section">
+    <div className="hero-container">
 
-      {/* Background Music */}
+      {/* Golden Glow Background */}
+      <div className="gold-bg" />
+
+      {/* Center Content */}
+      <div className="hero-content">
+
+        <h1 className="gold-title">✨ Happy Birthday ✨</h1>
+
+        <h2 className="hero-name">Karunya</h2>
+
+        <button 
+          className="enter-btn"
+          onClick={() => window.scrollTo({ top: 600, behavior: "smooth" })}
+        >
+          Tap to Enter ✨
+        </button>
+
+      </div>
+
+      {/* Background music autoplay */}
       <audio autoPlay loop src="/music/birthday.mp3" />
 
-      {/* Gold Particle Animation */}
-      <div className="gold-particles"></div>
-
-      {/* Main Content */}
-      <div className="hero-content">
-        <h1 className="hero-title">Happy Birthday Karunya 🎉✨</h1>
-        <p className="hero-sub">You Make Every Moment Magical 💖</p>
-
-        <img
-          src="/photos/hero.jpg"
-          alt="Karunya"
-          className="hero-photo"
-        />
-      </div>
-    </section>
+    </div>
   );
-};
-
-export default Hero;
+}
