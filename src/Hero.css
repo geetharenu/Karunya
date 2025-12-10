@@ -1,0 +1,80 @@
+.hero-container {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Premium Gold Background */
+.gold-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #fff6d1, #f4c542, #b8860b);
+  animation: goldMove 6s infinite alternate;
+  filter: blur(20px);
+}
+
+/* Glow Motion */
+@keyframes goldMove {
+  0% { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(1.15); opacity: 1; }
+}
+
+/* All text & buttons are above background */
+.hero-content {
+  position: relative;
+  text-align: center;
+  animation: fadeIn 1.5s ease-in-out;
+}
+
+/* Golden Title */
+.gold-title {
+  font-size: 40px;
+  font-weight: 800;
+  color: #4a3405;
+  text-shadow: 0 0 15px #fff6d1, 0 0 25px #f4d87b;
+}
+
+/* Name */
+.hero-name {
+  font-size: 32px;
+  margin-top: 10px;
+  color: white;
+  font-weight: 700;
+  text-shadow: 0 0 10px gold;
+  animation: scaleIn 1.4s ease-in-out;
+}
+
+/* Premium Button */
+.enter-btn {
+  margin-top: 30px;
+  padding: 15px 28px;
+  border: none;
+  border-radius: 50px;
+  font-size: 20px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #ffeb8c, #ffd54f, #f4b400);
+  color: #402e05;
+  cursor: pointer;
+  box-shadow: 0 5px 20px rgba(255, 215, 0, 0.6);
+  animation: fadeIn 2s ease-in-out;
+}
+
+.enter-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 10px 30px rgba(255, 215, 0, 0.8);
+}
+
+/* Fade Animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Scale Animation */
+@keyframes scaleIn {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
