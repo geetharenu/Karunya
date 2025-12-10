@@ -9,34 +9,40 @@ interface GalleryProps {
   photos: Photo[];
 }
 
-const Gallery: React.FC<GalleryProps> = ({ photos }) => {
+export default function Gallery({ photos }: GalleryProps) {
   return (
-    <div style={{ marginTop: "20px" }}>
-      <h2 style={{ marginTop: "20px" }}>Photo Gallery</h2>
-
-      <div
-        style={{
-          marginTop: "15px",
-          display: "grid",
-          gridTemplateColumns: "1fr",
-          gap: "20px",
-        }}
-      >
-        {photos.map((p) => (
-          <img
-            key={p.id}
-            src={p.url}
-            alt="Birthday"
-            style={{
-              width: "100%",
-              borderRadius: "15px",
-              boxShadow: "0 0 10px #0003",
-            }}
-          />
-        ))}
-      </div>
+    <div
+      style={{
+        marginTop: "20px",
+        display: "grid",
+        gridTemplateColumns: "1fr",
+        gap: "25px",
+        padding: "20px",
+      }}
+    >
+      {photos.map((p) => (
+        <img
+          key={p.id}
+          src={p.url}
+          alt="Birthday"
+          style={{
+            width: "100%",
+            borderRadius: "20px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+            transition: "transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease",
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = "scale(1.05)";
+            e.currentTarget.style.boxShadow = "0 20px 40px rgba(0,0,0,0.3)";
+            e.currentTarget.style.filter = "brightness(1.1)";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.2)";
+            e.currentTarget.style.filter = "brightness(1)";
+          }}
+        />
+      ))}
     </div>
   );
-};
-
-export default Gallery;
+}
