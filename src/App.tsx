@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import Hero from "./components/Hero";
 
 interface Photo {
   id: string;
@@ -85,7 +86,12 @@ export default function App() {
     );
   }
 
-  return (
+  
+}
+return (
+  <>
+    <Hero />
+
     <div style={{ padding: "20px" }}>
       <h1 style={{ color: data.config.themeColor }}>
         {data.config.customBirthdayMessage}
@@ -116,5 +122,5 @@ export default function App() {
         ))}
       </div>
     </div>
-  );
-}
+  </>
+);
