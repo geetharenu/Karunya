@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import Hero from "./components/Hero";
+import Gallery from "./components/Gallery";
 
 interface Photo {
   id: string;
@@ -90,37 +91,25 @@ export default function App() {
 }
 return (
   <>
+    {/* Hero Section */}
     <Hero />
 
+    {/* Main Content */}
     <div style={{ padding: "20px" }}>
+      
+      {/* Custom Birthday Message */}
       <h1 style={{ color: data.config.themeColor }}>
         {data.config.customBirthdayMessage}
       </h1>
-      <p style={{ marginTop: "10px" }}>{data.config.mainMessage}</p>
 
-      <h2 style={{ marginTop: "20px" }}>Photo Gallery</h2>
+      {/* Main message */}
+      <p style={{ marginTop: "10px" }}>
+        {data.config.mainMessage}
+      </p>
 
-      <div
-        style={{
-          marginTop: "15px",
-          display: "grid",
-          gridTemplateColumns: "1fr",
-          gap: "20px",
-        }}
-      >
-        {data.photos.map((p) => (
-          <img
-            key={p.id}
-            src={p.url}
-            alt="Birthday"
-            style={{
-              width: "100%",
-              borderRadius: "15px",
-              boxShadow: "0 0 10px #0003",
-            }}
-          />
-        ))}
-      </div>
+      {/* Photo Gallery Component */}
+      <Gallery photos={data.photos} />
+
     </div>
   </>
 );
