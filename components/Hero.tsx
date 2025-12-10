@@ -1,52 +1,57 @@
 import React from "react";
 
-export default function Hero() {
+const Hero: React.FC = () => {
   return (
     <div
       style={{
         height: "100vh",
+        width: "100%",
+        background: "linear-gradient(135deg, #ff9a9e, #fad0c4)",
         display: "flex",
+        flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
         textAlign: "center",
-        background: "linear-gradient(135deg, #ff8ec7, #8ec5ff)",
-        padding: "20px",
-        animation: "fadeIn 1.2s ease-out",
+        animation: "fadeIn 1.4s ease-out",
       }}
     >
-      <div
+      <h1
         style={{
-          backdropFilter: "blur(15px)",
-          background: "rgba(255,255,255,0.2)",
-          padding: "30px 40px",
-          borderRadius: "20px",
-          border: "2px solid rgba(255,255,255,0.5)",
-          boxShadow: "0 0 25px rgba(255,255,255,0.6)",
-          animation: "scaleIn 1.2s ease-out",
+          fontSize: "48px",
+          fontWeight: "bold",
+          color: "white",
+          letterSpacing: "2px",
+          animation: "scaleIn 1.3s ease-out",
         }}
       >
-        <h1
-          style={{
-            fontSize: "45px",
-            fontWeight: "bold",
-            color: "white",
-            textShadow: "0 0 10px #fff",
-          }}
-        >
-          🎉 Happy Birthday 🎉
-        </h1>
+        🎉 Happy Birthday 🎉
+      </h1>
 
-        <p
-          style={{
-            marginTop: "10px",
-            fontSize: "28px",
-            color: "#fff",
-            fontWeight: "600",
-          }}
-        >
-          Tap to Enter ✨
-        </p>
-      </div>
+      <p
+        style={{
+          marginTop: "10px",
+          fontSize: "28px",
+          color: "#fff",
+          fontWeight: "600",
+          animation: "fadeIn 2s ease-in",
+        }}
+      >
+        Tap to Enter ✨
+      </p>
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes scaleIn {
+          from { transform: scale(0.8); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
-}
+};
+
+export default Hero;
