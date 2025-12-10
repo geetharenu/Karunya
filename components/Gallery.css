@@ -1,0 +1,19 @@
+.gallery-grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 25px;
+}
+
+.gallery-photo {
+  width: 100%;
+  border-radius: 18px;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+  border: 3px solid gold;
+  animation: popIn 1.2s ease forwards;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
