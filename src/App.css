@@ -1,0 +1,15 @@
+.premium-app {
+  background: linear-gradient(135deg, #ff9acb, #ffd6e8);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Global premium fade */
+section {
+  animation: fadeIn 1.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
