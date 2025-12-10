@@ -116,6 +116,7 @@ export default function App() {
 
   
 }
+
 return (
   <>
     {/* Hero Section */}
@@ -123,20 +124,22 @@ return (
 
     {/* Main Content */}
     <div style={{ padding: "20px" }}>
-      
-      {/* Custom Birthday Message */}
-      <h1 style={{ color: data.config.themeColor }}>
+
+      {/* Main Birthday Message */}
+      <h1 style={{ color: data.config.themeColor, marginTop: "20px" }}>
         {data.config.customBirthdayMessage}
       </h1>
 
-      {/* Main message */}
       <p style={{ marginTop: "10px" }}>
         {data.config.mainMessage}
       </p>
 
-      {/* Photo Gallery Component */}
-      <Gallery photos={data.photos} />
+      <h2 style={{ marginTop: "25px", fontSize: "28px", fontWeight: "bold" }}>
+        📸 Photo Gallery
+      </h2>
 
+      {/* Gallery Section */}
+      <Gallery photos={data.photos} />
     </div>
   </>
 );
